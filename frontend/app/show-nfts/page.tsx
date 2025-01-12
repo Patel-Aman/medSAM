@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
-import Button from "../../components/Button";
 import { ethers } from "ethers";
-import NFTAbi from "../../../blockchain/artifacts/contracts/NFT.sol/NFT.json";
+import NFTContract from "../../../blockchain/artifacts/contracts/NFT.sol/NFT.json";
 import Image from "next/image";
+import 'dotenv/config'
 
-const CONTRACT_ADDRESS = "0xYourContractAddressHere"; // Replace with your deployed contract address
+
+const contract_address = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ?? '';
 
 type NFT = {
   tokenId: string;
@@ -32,7 +33,7 @@ const AllNFTs: React.FC = () => {
     try {
       setLoading(true);
       const provider = new ethers.BrowserProvider(window.ethereum);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, NFTAbi, provider);
+      const contract = new ethers.Contract(contract_address, NFTContract.abi, provider);
 
       // Call the smart contract to fetch all NFTs
       const [tokenIds, tokenURIs]: [string[], string[]] = await contract.getAllNFTs();

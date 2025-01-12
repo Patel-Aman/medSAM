@@ -1,17 +1,18 @@
 import { ethers } from "ethers";
 import { useCallback } from "react";
-import NFTAbi from "../../blockchain/artifacts/contracts/NFT.sol/NFT.json"; // Add ABI for the NFT contract
+import NFTContract from "../../blockchain/artifacts/contracts/NFT.sol/NFT.json";
+import 'dotenv/config'
 
-const CONTRACT_ADDRESS = "0xYourContractAddressHere"; // Replace with deployed contract address
+const contract_address = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ?? '';
 
 export const useNFTContract = () => {
   const mintNFT = useCallback(async (tokenURI: string) => {
     if (!window.ethereum) throw new Error("MetaMask not detected");
 
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    const signer = provider.getSigner();
+    const provider = new ethers.BrowserProvider(window.ethereum)
+    const signer = await provider.getSigner();
 
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, NFTAbi, signer);
+    const contract = new ethers.Contract(contract_address, NFTContract.abi, signer);
 
     try {
       const tx = await contract.mintNFT(tokenURI);

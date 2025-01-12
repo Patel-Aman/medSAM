@@ -4,82 +4,108 @@ import React, { useState, ChangeEvent, FormEvent } from "react";
 import Navbar from "../../components/Navbar";
 import Button from "../../components/Button";
 import { useRouter } from "next/navigation";
-import { useNFTContract } from "../../hooks/useNFTContract";
+import { uploadFileToIPFS, uploadJSONToIPFS } from "@/pinata";
+import 'dotenv/config';
+import nftContract from '../../../blockchain/artifacts/contracts/NFT.sol/NFT.json';
+import { ethers } from "ethers";
 
 type FormData = {
   name: string;
   description: string;
   price: string;
-  imageType: "upload" | "url";
   imageUrl: string;
-  imageFile: File | null;
 };
 
 const CreateNFT: React.FC = () => {
+  const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
   const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
     price: "",
-    imageType: "upload",
     imageUrl: "",
-    imageFile: null,
   });
+  const [imageType, setImageType] = useState('url');
+  const [file, setFile] = useState<File>()
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const { mintNFT } = useNFTContract();
   const router = useRouter();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prevState) => ({ ...prevState, [name]: value }));
+    setFormData((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFormData((prevState) => ({ ...prevState, imageFile: e.target.files[0] }));
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    if(e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+    try {
+        //upload the file to IPFS
+        if(!file) throw Error('please reupload the file');
+        const response = await uploadFileToIPFS(file);
+        if(response.success === true) {
+            console.log("Uploaded image to Pinata: ", response.pinataURL)
+            setFormData((prevState) => ({
+              ...prevState,
+              imageUrl: response.pinataURL ?? "",
+            }));
+        }
+    }
+    catch(e) {
+        console.log("Error during file upload", e);
     }
   };
 
   const handleRadioChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    setFormData((prevState) => ({ ...prevState, imageType: value as "upload" | "url" }));
+    setImageType(value);
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setLoading(true);   
     setError(null);
 
     try {
-      let imageUrl = formData.imageUrl;
-
-      if (formData.imageType === "upload" && formData.imageFile) {
-        const formDataUpload = new FormData();
-        formDataUpload.append("file", formData.imageFile);
-
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          body: formDataUpload,
-        });
-
-        if (!uploadResponse.ok) throw new Error("Image upload failed");
-
-        const uploadData = await uploadResponse.json();
-        imageUrl = uploadData.url;
+      let tokenUri;
+      // Validate inputs
+      if (!formData.name || !formData.description || !formData.price) {
+        throw new Error("All fields are required.");
       }
 
-      const tokenURI = JSON.stringify({
-        name: formData.name,
-        description: formData.description,
-        image: imageUrl,
-        price: formData.price
-      });
+      // upload metadata to pinata and send transaction to smart contract
+      try {
+        const nftJSON = {
+          name: formData.name,
+          description: formData.description,
+          price: formData.price,
+          imageUrl: formData.imageUrl,
+        };
+        const response = await uploadJSONToIPFS(nftJSON);
 
-      // Send tokenURI to the smart contract
-      const txHash = await mintNFT(tokenURI);
-      console.log(`Transaction Hash: ${txHash}`);
+        if(response.success === true){
+          console.log("Uploaded JSON to Pinata: ", response)
+          tokenUri =  response.pinataURL;
+        }
+        if(typeof window.ethereum !== "undefined") {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
 
+          // Create a contract instance
+          const contract = new ethers.Contract(contractAddress, nftContract.abi, signer);
+
+          const txHash = await contract.mintNFT(tokenUri);
+          console.log(txHash);
+        }
+      } catch(e) {
+        console.log(`following error occured: ${e}`);
+      }
+     
+      // Navigate back to the NFTs listing
       router.push("/my-nfts");
     } catch (err) {
       setError((err as Error).message);
@@ -91,6 +117,7 @@ const CreateNFT: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-100 text-gray-800">
       <Navbar />
+
       <main className="flex flex-grow flex-col justify-center items-center space-y-8 p-4">
         <h1 className="text-2xl font-bold">Create New NFT</h1>
 
@@ -135,7 +162,7 @@ const CreateNFT: React.FC = () => {
                   type="radio"
                   name="imageType"
                   value="upload"
-                  checked={formData.imageType === "upload"}
+                  checked={imageType === "upload"}
                   onChange={handleRadioChange}
                   className="mr-2"
                 />
@@ -146,7 +173,7 @@ const CreateNFT: React.FC = () => {
                   type="radio"
                   name="imageType"
                   value="url"
-                  checked={formData.imageType === "url"}
+                  checked={imageType === "url"}
                   onChange={handleRadioChange}
                   className="mr-2"
                 />
@@ -155,7 +182,7 @@ const CreateNFT: React.FC = () => {
             </div>
           </div>
 
-          {formData.imageType === "upload" ? (
+          {imageType === "upload" ? (
             <div>
               <label htmlFor="imageFile" className="block text-gray-700">
                 Upload Image
@@ -207,6 +234,10 @@ const CreateNFT: React.FC = () => {
 
         <Button label="Back to Home" onClick={() => router.push("/")} />
       </main>
+
+      <footer className="py-4 text-center bg-gray-200 text-gray-600">
+        © 2025 NFT Marketplace. All rights reserved.
+      </footer>
     </div>
   );
 };

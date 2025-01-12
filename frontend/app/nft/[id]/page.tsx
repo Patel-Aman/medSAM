@@ -6,7 +6,8 @@ import Navbar from "../../../components/Navbar";
 import Button from "../../../components/Button";
 import Image from "next/image";
 import { ethers } from "ethers";
-import NFTAbi from "../../../../blockchain/artifacts/contracts/NFT.sol/NFT.json"; // Ensure this path points to your ABI
+import NFTContract from "../../../../blockchain/artifacts/contracts/NFT.sol/NFT.json"; // Ensure this path points to your ABI
+import 'dotenv/config'
 
 type NFT = {
   tokenId: number;
@@ -16,14 +17,13 @@ type NFT = {
   price?: string; // Optional if price isn't always present
 };
 
-const CONTRACT_ADDRESS = "0xYourContractAddressHere"; // Replace with your deployed contract address
-
 const NFTDetail: React.FC = () => {
   const [nft, setNft] = useState<NFT | null>(null); // State to store selected NFT data
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get('id'); // Get NFT ID from the URL query
+  const contract_address = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ?? '';
 
   const fetchNFTDetails = async (tokenId: string) => {
     if (!window.ethereum) {
@@ -34,7 +34,7 @@ const NFTDetail: React.FC = () => {
     try {
       setLoading(true);
       const provider = new ethers.BrowserProvider(window.ethereum);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, NFTAbi, provider);
+      const contract = new ethers.Contract(contract_address, NFTContract.abi, provider);
 
       // Fetch NFT URI and metadata
       const tokenURI = await contract.tokenURI(tokenId);
@@ -66,7 +66,7 @@ const NFTDetail: React.FC = () => {
     if (id) {
       fetchNFTDetails(id as string);
     }
-  }, [id]);
+  });
 
   if (loading) {
     return (
