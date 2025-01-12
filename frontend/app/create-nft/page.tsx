@@ -25,7 +25,6 @@ const CreateNFT: React.FC = () => {
     imageUrl: "",
   });
   const [imageType, setImageType] = useState('url');
-  const [file, setFile] = useState<File>()
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,16 +39,13 @@ const CreateNFT: React.FC = () => {
   };
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    if(e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
     try {
         //upload the file to IPFS
-        if(!file) throw Error('please reupload the file');
-        const response = await uploadFileToIPFS(file);
+        if (!e.target.files || !e.target.files[0]) throw Error('please reupload the file');
+        const response = await uploadFileToIPFS(e.target.files[0]);
         if(response.success === true) {
             console.log("Uploaded image to Pinata: ", response.pinataURL)
-            setFormData((prevState) => ({
+            await setFormData((prevState) => ({
               ...prevState,
               imageUrl: response.pinataURL ?? "",
             }));
@@ -229,8 +225,17 @@ const CreateNFT: React.FC = () => {
               required
             />
           </div>
-
-          <Button label={loading ? "Creating..." : "Create NFT"} onClick={handleSubmit} />
+          <Button
+            disabled={!formData.name || !formData.description || !formData.imageUrl || loading}
+            label={
+              !formData.name || !formData.description || !formData.imageUrl
+                ? "Provide Inputs and wait for file to upload"
+                : loading
+                ? "Creating..."
+                : "Create NFT"
+            }
+            onClick={handleSubmit}
+          />
           {error && <p className="text-red-500">{error}</p>}
         </form>
 
