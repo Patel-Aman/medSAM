@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import Button from "../../../components/Button";
 import Image from "next/image";
@@ -21,9 +21,9 @@ const NFTDetail: React.FC = () => {
   const [nft, setNft] = useState<NFT | null>(null); // State to store selected NFT data
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const id = searchParams.get('id'); // Get NFT ID from the URL query
+  const { id } = useParams(); // Get NFT ID from the URL query
   const contract_address = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ?? '';
+  console.log(id)
 
   const fetchNFTDetails = async (tokenId: string) => {
     if (!window.ethereum) {
@@ -41,19 +41,12 @@ const NFTDetail: React.FC = () => {
       const response = await fetch(tokenURI);
       const metadata = await response.json();
 
-      // Optionally, fetch price if the NFT is for sale
-      const isForSale = await contract.tokenForSale(tokenId);
-      let price = null;
-      if (isForSale) {
-        price = ethers.formatEther(await contract.tokenPrices(tokenId));
-      }
-
       setNft({
         tokenId: Number(tokenId),
         name: metadata.name,
         description: metadata.description,
-        image: metadata.image,
-        price: price ? `${price} ETH` : undefined,
+        image: metadata.imageUrl,
+        price: metadata.price ? `${metadata.price} ETH` : undefined,
       });
     } catch (error) {
       console.error("Error fetching NFT details:", error);
@@ -66,7 +59,7 @@ const NFTDetail: React.FC = () => {
     if (id) {
       fetchNFTDetails(id as string);
     }
-  });
+  }, []);
 
   if (loading) {
     return (

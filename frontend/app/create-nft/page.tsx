@@ -85,6 +85,7 @@ const CreateNFT: React.FC = () => {
           price: formData.price,
           imageUrl: formData.imageUrl,
         };
+        console.log(nftJSON);
         const response = await uploadJSONToIPFS(nftJSON);
 
         if(response.success === true){
@@ -174,6 +175,7 @@ const CreateNFT: React.FC = () => {
                   name="imageType"
                   value="url"
                   checked={imageType === "url"}
+
                   onChange={handleRadioChange}
                   className="mr-2"
                 />

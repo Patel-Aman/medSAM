@@ -37,7 +37,7 @@ const MyNFTs: React.FC = () => {
         const [tokenIds, tokenURIs] = await contract.getMyNFTs();
 
         const ownedNFTs = await Promise.all(
-          tokenIds.map(async (tokenId, index) => {
+          tokenIds.map(async (tokenId: string, index: number) => {
             const tokenURI = tokenURIs[index];
             const response = await fetch(tokenURI);
       
@@ -56,11 +56,7 @@ const MyNFTs: React.FC = () => {
           })
         );
 
-        console.log(ownedNFTs);
-
-        await setNfts(ownedNFTs);
-        console.log("nfts");
-        console.log(nfts);
+        setNfts(ownedNFTs);
       } else {
         alert("Please install MetaMask to use this feature.");
       }
@@ -69,7 +65,7 @@ const MyNFTs: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [contractAddress, nfts]);
+  }, [contractAddress]);
 
   useEffect(() => {
     fetchNFTs()
