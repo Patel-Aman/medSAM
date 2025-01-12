@@ -16,6 +16,7 @@ const getContract = async () => {
 };
 
 export const useNFTContract = () => {
+  // Mint new NFT
   const mintNFT = async (tokenURI: string) => {
     try {
       const contract = await getContract();
