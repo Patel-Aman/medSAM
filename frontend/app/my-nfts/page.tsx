@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { useRouter } from "next/navigation";
 import 'dotenv/config'
@@ -24,58 +24,56 @@ const MyNFTs: React.FC = () => {
 
   const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
 
-  useEffect(() => {
-    const fetchNFTs = async () => {
-      try {
-        setLoading(true);
+  const fetchNFTs = useCallback(async () => {
+    try {
+      if (typeof window.ethereum !== "undefined") {
+        // Connect to MetaMask
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
 
-        if (typeof window.ethereum !== "undefined") {
-          // Connect to MetaMask
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const signer = await provider.getSigner();
+        // Create a contract instance
+        const contract = new ethers.Contract(contractAddress, nftContract.abi, signer);
 
-          // Get the connected wallet address
-          const walletAddress = await signer.getAddress();
+        const [tokenIds, tokenURIs] = await contract.getMyNFTs();
 
-          // Create a contract instance
-          const contract = new ethers.Contract(contractAddress, nftContract.abi, provider);
-
-          // Fetch the total number of NFTs
-          const totalSupply = await contract.nextTokenId();
-
-          // Iterate through NFTs and fetch metadata for NFTs owned by the connected wallet
-          const ownedNFTs: NFT[] = [];
-          for (let tokenId = 0; tokenId < Number(totalSupply.toString()); tokenId++) {
-            const owner = await contract.ownerOf(tokenId);
-            if (owner.toLowerCase() === walletAddress.toLowerCase()) {
-              const tokenURI = await contract.tokenURI(tokenId);
-              const response = await fetch(tokenURI);
-
-              console.log(response)
-
-              // ownedNFTs.push({
-              //   id: tokenId,
-              //   name: metadata.name,
-              //   description: metadata.description,
-              //   imageUrl: metadata.image,
-              //   price: "N/A", // Placeholder, add price logic if needed
-              // });
+        const ownedNFTs = await Promise.all(
+          tokenIds.map(async (tokenId, index) => {
+            const tokenURI = tokenURIs[index];
+            const response = await fetch(tokenURI);
+      
+            if (!response.ok) {
+              throw new Error(`Failed to fetch metadata for token ${tokenId}: ${response.statusText}`);
             }
-          }
+      
+            const metadata = await response.json();
+            return {
+              id: Number(tokenId.toString()),
+              name: metadata.name,
+              description: metadata.description,
+              imageUrl: metadata.imageUrl,
+              price: metadata.price,
+            };
+          })
+        );
 
-          setNfts(ownedNFTs);
-        } else {
-          alert("Please install MetaMask to use this feature.");
-        }
-      } catch (error) {
-        console.error("Error fetching NFTs:", error);
-      } finally {
-        setLoading(false);
+        console.log(ownedNFTs);
+
+        await setNfts(ownedNFTs);
+        console.log("nfts");
+        console.log(nfts);
+      } else {
+        alert("Please install MetaMask to use this feature.");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching NFTs:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [contractAddress, nfts]);
 
-    fetchNFTs();
-  });
+  useEffect(() => {
+    fetchNFTs()
+  }, [])
 
   if (loading) {
     return (
