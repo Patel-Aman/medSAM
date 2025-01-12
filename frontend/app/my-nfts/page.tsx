@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { ethers } from "ethers";
 import { useRouter } from "next/navigation";
-import 'dotenv/config'
 import Navbar from "../../components/Navbar";
 import Button from "../../components/Button";
 import NFTCard from "@/components/NFTCard";
-import nftContract from "../../../blockchain/artifacts/contracts/NFT.sol/NFT.json"; // Import the ABI of the contract
+import { useNFTContract } from "@/hooks/useNFTContract";
 
 type NFT = {
   id: number;
@@ -21,51 +19,18 @@ const MyNFTs: React.FC = () => {
   const [nfts, setNfts] = useState<NFT[]>([]); // State to store NFTs
   const [loading, setLoading] = useState<boolean>(true); // Loading state
   const router = useRouter();
-
-  const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
+  const { fetchMyNFTs } = useNFTContract();
 
   const fetchNFTs = useCallback(async () => {
     try {
-      if (typeof window.ethereum !== "undefined") {
-        // Connect to MetaMask
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-
-        // Create a contract instance
-        const contract = new ethers.Contract(contractAddress, nftContract.abi, signer);
-
-        const [tokenIds, tokenURIs] = await contract.getMyNFTs();
-
-        const ownedNFTs = await Promise.all(
-          tokenIds.map(async (tokenId: string, index: number) => {
-            const tokenURI = tokenURIs[index];
-            const response = await fetch(tokenURI);
-      
-            if (!response.ok) {
-              throw new Error(`Failed to fetch metadata for token ${tokenId}: ${response.statusText}`);
-            }
-      
-            const metadata = await response.json();
-            return {
-              id: Number(tokenId.toString()),
-              name: metadata.name,
-              description: metadata.description,
-              imageUrl: metadata.imageUrl,
-              price: metadata.price,
-            };
-          })
-        );
-
+        const ownedNFTs = await fetchMyNFTs();
         setNfts(ownedNFTs);
-      } else {
-        alert("Please install MetaMask to use this feature.");
-      }
     } catch (error) {
       console.error("Error fetching NFTs:", error);
     } finally {
       setLoading(false);
     }
-  }, [contractAddress]);
+  }, []);
 
   useEffect(() => {
     fetchNFTs()

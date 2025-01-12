@@ -2,11 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
-import { ethers } from "ethers";
-import NFTContract from "../../../blockchain/artifacts/contracts/NFT.sol/NFT.json";
 import NFTCard from "@/components/NFTCard";
-import 'dotenv/config'
 import { useRouter } from "next/navigation";
+import { useNFTContract } from "@/hooks/useNFTContract";
 
 type NFT = {
   id: number;
@@ -20,45 +18,14 @@ const AllNFTs: React.FC = () => {
   const [nfts, setNFTs] = useState<NFT[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
-  const contract_address = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ?? '';
+  const { fetchAllNFTs } = useNFTContract();
 
   const fetchNFTs = async () => {
-    if (!window.ethereum) {
-      console.error("MetaMask not detected");
-      return;
-    }
-
-    try {
+        try {
       setLoading(true);
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(contract_address, NFTContract.abi, signer);
-
-      // Call the smart contract to fetch all NFTs
-      const [tokenIds, tokenURIs]: [string[], string[]] = await contract.getAllNFTs();
-
+      
       // Fetch metadata for each NFT
-      const nftsData: NFT[] = await Promise.all(
-        tokenIds.map(async (tokenId: string, index: number) => {
-          const tokenURI = tokenURIs[index];
-          const response = await fetch(tokenURI);
-          
-          if (!response.ok) {
-            throw new Error(`Failed to fetch metadata for token ${tokenId}: ${response.statusText}`);
-          }
-    
-          const metadata = await response.json();
-          return {
-            id: Number(tokenId.toString()),
-            name: metadata.name,
-            description: metadata.description,
-            imageUrl: metadata.imageUrl,
-            price: metadata.price,
-          };
-        })
-      );
-
+      const nftsData: NFT[] = await fetchAllNFTs();
       setNFTs(nftsData);
     } catch (error) {
       console.error("Error fetching NFTs:", error);

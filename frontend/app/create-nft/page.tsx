@@ -4,10 +4,8 @@ import React, { useState, ChangeEvent, FormEvent } from "react";
 import Navbar from "../../components/Navbar";
 import Button from "../../components/Button";
 import { useRouter } from "next/navigation";
-import { uploadFileToIPFS, uploadJSONToIPFS } from "@/pinata";
-import 'dotenv/config';
-import nftContract from '../../../blockchain/artifacts/contracts/NFT.sol/NFT.json';
-import { ethers } from "ethers";
+import { uploadFileToIPFS, uploadJSONToIPFS } from "@/services/pinata";
+import { useNFTContract } from "@/hooks/useNFTContract";
 
 type FormData = {
   name: string;
@@ -17,7 +15,7 @@ type FormData = {
 };
 
 const CreateNFT: React.FC = () => {
-  const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
+  const { mintNFT } = useNFTContract();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
@@ -67,7 +65,7 @@ const CreateNFT: React.FC = () => {
     setError(null);
 
     try {
-      let tokenUri;
+      let tokenUri: string;
       // Validate inputs
       if (!formData.name || !formData.description || !formData.price) {
         throw new Error("All fields are required.");
@@ -84,18 +82,10 @@ const CreateNFT: React.FC = () => {
         console.log(nftJSON);
         const response = await uploadJSONToIPFS(nftJSON);
 
-        if(response.success === true){
+        if(response.success === true && response.pinataURL){
           console.log("Uploaded JSON to Pinata: ", response)
           tokenUri =  response.pinataURL;
-        }
-        if(typeof window.ethereum !== "undefined") {
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const signer = await provider.getSigner();
-
-          // Create a contract instance
-          const contract = new ethers.Contract(contractAddress, nftContract.abi, signer);
-
-          const txHash = await contract.mintNFT(tokenUri);
+          const txHash = await mintNFT(tokenUri);
           console.log(txHash);
         }
       } catch(e) {
