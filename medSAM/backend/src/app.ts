@@ -9,10 +9,6 @@ app.use(helmet());
 app.use(express.json());
 app.use('/api', uploadRoutes);
 
-app.get('/i', (req, res) => {
-  res.send("Hello there");
-})
-
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   logger.error(err.message);
   res.status(500).json({ error: 'Internal Server Error' });

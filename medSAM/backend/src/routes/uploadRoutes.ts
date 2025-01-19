@@ -3,14 +3,12 @@ import multer from 'multer';
 import { uploadFile } from '../controllers/uploadController';
 import { validateFile } from '../middleware/fileValidation';
 import { config } from '../config/config';
+import { getMask } from '../controllers/boundingBoxController';
 
 const upload = multer({ dest: config.uploadDir });
 
 const router = Router();
 router.post('/upload', upload.single('file'), validateFile, uploadFile);
-router.get('/info', (req, res) => {
-    res.send("you've reached uploads");
-})
-
+router.post('/new-box', getMask) // to be implemented
 
 export default router;
