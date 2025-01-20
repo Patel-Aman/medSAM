@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { sendBoundingBox } from "../services/UploadService";
 import useBoundingBoxes from "../hooks/useBoundingBoxes";
-import styles from '../styles/LoadingOverlay.module.css'
+import styles from '../styles/global.module.css'
 
 
 interface ImageEditorProps {
@@ -160,24 +160,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath }) => {
     }
   };
 
-  const handleSubmitBoundingBoxes = async () => {
-    if (!imagePath || boundingBoxes.length === 0) {
-      alert("Please upload an image and draw at least one bounding box.");
-      return;
-    }
-
-    try {
-      const lastBox = boundingBoxes[boundingBoxes.length - 1];
-      const formattedBoundingBox = `${Math.round(lastBox.x)},${Math.round(lastBox.y)},${Math.round((lastBox.x + lastBox.width))},${Math.round((lastBox.y + lastBox.height))}`;
-      console.log(formattedBoundingBox);
-      const maskImageBase64 = await sendBoundingBox(imagePath, formattedBoundingBox);
-      console.log("mask completed");
-      setMaskImages([...maskImages, maskImageBase64])
-    } catch (error) {
-      console.error("Failed to process bounding box:", error);
-    }
-  };
-
   const handleClear = () => {
     clearBoundingBoxes();
   };
@@ -185,20 +167,17 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath }) => {
   return (
     <div style={{ position: "relative", textAlign: "center" }}>
       <div style={{ marginBottom: "10px" }}>
-        <button onClick={() => handleZoom("in")} style={buttonStyle}>
+        <button onClick={() => handleZoom("in")} className={styles.buttonStyle}>
           Zoom In
         </button>
-        <button onClick={() => handleZoom("out")} style={buttonStyle}>
+        <button onClick={() => handleZoom("out")} className={styles.buttonStyle}>
           Zoom Out
         </button>
-        <button onClick={handleFullScreen} style={buttonStyle}>
+        <button onClick={handleFullScreen} className={styles.buttonStyle}>
           Full Screen
         </button>
-        <button onClick={handleClear} style={{ ...buttonStyle, backgroundColor: "red", color: "white" }}>
+        <button onClick={handleClear} className={styles.buttonStyle}>
           Clear Boxes
-        </button>
-        <button onClick={handleSubmitBoundingBoxes} style={buttonStyle}>
-          Submit Bounding Boxes
         </button>
 
       </div>
@@ -218,17 +197,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath }) => {
       )}
     </div>
   );
-};
-
-const buttonStyle = {
-  margin: "5px",
-  padding: "10px 20px",
-  fontSize: "16px",
-  borderRadius: "5px",
-  border: "none",
-  cursor: "pointer",
-  backgroundColor: "#007BFF",
-  color: "white",
 };
 
 export default ImageEditor;
