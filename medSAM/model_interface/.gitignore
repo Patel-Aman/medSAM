@@ -10,7 +10,6 @@
 *.log
 *.png
 data/
-work_dir/
 assets/
 
 # Byte-compiled / optimized / DLL files
