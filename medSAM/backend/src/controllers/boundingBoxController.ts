@@ -5,11 +5,14 @@ import path from "path";
 
 export const getMask = (req: Request, res: Response, next: NextFunction):void => {
     try {
+        console.log('triggered');
         const {filePath, boundingBox} = req.body;
 
         if (!filePath || !boundingBox) {
             res.status(400).send("Image file and bounding box are required.");
         }
+
+        console.log(boundingBox)
 
         const outputPath = path.join(__dirname, "../../assets")
 
@@ -51,19 +54,6 @@ export const getMask = (req: Request, res: Response, next: NextFunction):void =>
           }
       });
       
-
-        // pythonProcess.on("close", (code) => {
-        //     if (code === 0) {
-        //       // const maskArray = JSON.parse(maskData); // Ensure Python outputs the mask as JSON
-        //       const response = {  
-        //         mask: maskData,
-        //       };
-        //       res.json(response); // Send mask array to the client
-        //     } else {
-        //       res.status(500).send("Error processing the image.");
-        //       next();
-        //     }
-        // });
     } catch (error) {
         res.status(500).json({ error: 'Failed to upload file.' });
         next();

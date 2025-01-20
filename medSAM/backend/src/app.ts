@@ -2,8 +2,16 @@ import express from 'express';
 import helmet from 'helmet';
 import uploadRoutes from './routes/uploadRoutes';
 import { logger } from './utils/logger';
+import { config } from './config/config';
 
 const app = express();
+const cors = require('cors');
+
+app.use(cors({
+  origin: `http://localhost:${config.localhostFrontend}`, // Allow requests from your frontend
+  methods: 'GET, POST, PUT, DELETE', // Allow specific HTTP methods
+  allowedHeaders: 'Content-Type',
+}));
 
 app.use(helmet());
 app.use(express.json());

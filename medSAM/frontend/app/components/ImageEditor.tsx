@@ -1,16 +1,22 @@
 import { useRef, useEffect, useState } from "react";
+import { sendBoundingBox } from "../services/UploadService";
 import useBoundingBoxes from "../hooks/useBoundingBoxes";
+import styles from '../styles/LoadingOverlay.module.css'
+
 
 interface ImageEditorProps {
   imageSrc: string;
+  imagePath: string;
 }
 
-const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc }) => {
+const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [scale, setScale] = useState(1);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
   const { boundingBoxes, addBoundingBox, clearBoundingBoxes } = useBoundingBoxes();
+  const [maskImages, setMaskImages] = useState<string[]>([]); // Base64-encoded mask image
+  const [loading, setLoading] = useState(false); // Loading state
 
   // Draw the image and boxes
   useEffect(() => {
@@ -18,7 +24,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc }) => {
     if (canvas) {
       const ctx = canvas.getContext("2d");
       const img = new Image();
-      img.src = imageSrc;
+      img.src = imageSrc ?? '';
       img.onload = () => {
         canvas.width = img.width * scale;
         canvas.height = img.height * scale;
@@ -32,12 +38,47 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc }) => {
           ctx!.strokeStyle = "red";
           ctx!.lineWidth = 2;
           ctx?.stroke();
-        //   ctx?.fillStyle = "red";
+          ctx!.fillStyle = "red";
           ctx?.fillText(box.id, box.x * scale + 5, box.y * scale + 15);
         });
+
+        // Overlay the mask image if it's available
+        if (maskImages.length > 0) {
+          maskImages.forEach((mask) => {
+            const maskImg = new Image();
+            maskImg.src = `data:image/png;base64,${mask}`; 
+            maskImg.onload = () => {
+              ctx?.drawImage(maskImg, 0, 0, canvas.width, canvas.height);
+            };
+          })
+        }
       };
     }
-  }, [imageSrc, boundingBoxes, scale]);
+  }, [imageSrc, boundingBoxes, scale, maskImages]);
+
+  useEffect(() => {
+    const handleSubmitBoundingBoxes = async () => {
+      if (!imagePath || boundingBoxes.length === 0) {
+        return;
+      }
+  
+      try {
+        const lastBox = boundingBoxes[boundingBoxes.length - 1];
+        const formattedBoundingBox = `${Math.round(lastBox.x)},${Math.round(lastBox.y)},${Math.round((lastBox.x + lastBox.width))},${Math.round((lastBox.y + lastBox.height))}`;
+        console.log(formattedBoundingBox);
+        setLoading(true); // Start loading
+        const maskImageBase64 = await sendBoundingBox(imagePath, formattedBoundingBox);
+        console.log("mask completed");
+        setMaskImages((prevMaskImages) => [...prevMaskImages, maskImageBase64]);
+      } catch (error) {
+        console.error("Failed to process bounding box:", error);
+      } finally {
+        setLoading(false); // End loading
+      }
+    };
+
+    handleSubmitBoundingBoxes();
+  }, [boundingBoxes, imagePath])
 
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -51,7 +92,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc }) => {
       setIsDrawing(true);
   };
 
-  const handleMouseUp = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseUp = async (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing || !startPoint) return;
 
     const canvas = canvasRef.current;
@@ -80,7 +121,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc }) => {
   
     // Clear the canvas and redraw the image and existing bounding boxes
     const img = new Image();
-    img.src = imageSrc;
+    img.src = imageSrc ?? '';
     img.onload = () => {
       ctx?.clearRect(0, 0, canvas.width, canvas.height);
       ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -119,6 +160,24 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc }) => {
     }
   };
 
+  const handleSubmitBoundingBoxes = async () => {
+    if (!imagePath || boundingBoxes.length === 0) {
+      alert("Please upload an image and draw at least one bounding box.");
+      return;
+    }
+
+    try {
+      const lastBox = boundingBoxes[boundingBoxes.length - 1];
+      const formattedBoundingBox = `${Math.round(lastBox.x)},${Math.round(lastBox.y)},${Math.round((lastBox.x + lastBox.width))},${Math.round((lastBox.y + lastBox.height))}`;
+      console.log(formattedBoundingBox);
+      const maskImageBase64 = await sendBoundingBox(imagePath, formattedBoundingBox);
+      console.log("mask completed");
+      setMaskImages([...maskImages, maskImageBase64])
+    } catch (error) {
+      console.error("Failed to process bounding box:", error);
+    }
+  };
+
   const handleClear = () => {
     clearBoundingBoxes();
   };
@@ -138,14 +197,25 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc }) => {
         <button onClick={handleClear} style={{ ...buttonStyle, backgroundColor: "red", color: "white" }}>
           Clear Boxes
         </button>
+        <button onClick={handleSubmitBoundingBoxes} style={buttonStyle}>
+          Submit Bounding Boxes
+        </button>
+
       </div>
       <canvas
         ref={canvasRef}
-        style={{ border: "1px solid black", cursor: "crosshair" }}
+        style={{ border: "1px solid black", cursor: "crosshair", pointerEvents: loading ? "none" : "auto" }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}   
         onMouseUp={handleMouseUp}
       ></canvas>
+
+      {loading && (
+        <div className={styles.LoadingOverlay}>
+          <div className={styles.Spinner}></div>
+          <p className={styles.LoadingOverlayMessage}>Processing mask...</p>
+        </div>
+      )}
     </div>
   );
 };
