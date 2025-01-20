@@ -4,6 +4,7 @@ from skimage import io, transform
 from segment_anything import sam_model_registry
 import torch.nn.functional as F
 import argparse
+import matplotlib.pyplot as plt
 import os
 
 join = os.path.join
@@ -99,7 +100,7 @@ img_1024_tensor = (
     torch.tensor(img_1024).float().permute(2, 0, 1).unsqueeze(0).to(device)
 )
 
-box_np = np.array([[int(x) for x in args.box[1:-1].split(',')]]) 
+box_np = np.array([[int(x) for x in args.box.split(',')]]) 
 # transfer box_np t0 1024x1024 scale
 box_1024 = box_np / np.array([W, H, W, H]) * 1024
 
@@ -107,10 +108,27 @@ with torch.no_grad():
     image_embedding = medsam_model.image_encoder(img_1024_tensor)  # (1, 256, 64, 64)
 
 medsam_seg = medsam_inference(medsam_model, image_embedding, box_1024, H, W)
-io.imsave(
-    join(args.seg_path, "seg_" + os.path.basename(args.data_path) + ".png"),
-    medsam_seg,
-    check_contrast=False,
-)
 
-print(medsam_seg)
+# Resize the segmentation mask to the original image size
+resized_mask = transform.resize(medsam_seg, (H, W), order=0, preserve_range=True, anti_aliasing=False).astype(np.uint8)
+
+# Convert the mask to a grayscale format (0 to 255)
+resized_mask = resized_mask * 255  # Convert binary mask to a range of 0-255
+
+color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
+
+darker_color = color[:3] * 0.5 # the lower the number darker the mask
+
+# Create an RGBA image
+rgba_image = np.zeros((H, W, 4), dtype=np.float32)
+for c in range(3):  # Assign the random color to RGB channels
+    rgba_image[:, :, c] = resized_mask * darker_color[c]
+rgba_image[:, :, 3] = resized_mask * 0.6  # 0.6 is alpha value
+
+# Convert to 8-bit format for saving
+rgba_image = (rgba_image * 255).astype(np.uint8)
+
+# Save the resized mask as a PNG image
+io.imsave(join(args.seg_path, "seg_" + os.path.basename(args.data_path)) + ".png", rgba_image)
+
+print("seg_" + os.path.basename(args.data_path) + ".png")
