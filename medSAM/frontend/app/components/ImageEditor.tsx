@@ -133,7 +133,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath }) => {
         ctx!.strokeStyle = "red";
         ctx!.lineWidth = 2;
         ctx?.stroke();
-        // ctx?.fillStyle = "red";
         ctx?.fillText(box.id, box.x * scale + 5, box.y * scale + 15);
       });
   
