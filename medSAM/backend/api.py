@@ -15,7 +15,9 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 UPLOAD_FOLDER = 'static/uploads'
+RESULT_FOLDER = 'static/results'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(RESULT_FOLDER, exist_ok=True)
 
 @app.route('/')
 def home():
@@ -60,10 +62,11 @@ def segment_image():
         return jsonify({"error": f"No image found with ID: {image_id}"}), 404
 
     img_np = io.imread(file_path)
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
     # Load the model once globally
     device = "cuda:0"
-    checkpoint_path = "/home/aman/Documents/Projects/silverllc/Aman_Gocha/medSAM/model_interface/work_dir/MedSAM/medsam_vit_b.pth"
+    checkpoint_path = "./work_dir/MedSAM/medsam_vit_b.pth"
     medsam_model = sam_model_registry["vit_b"](checkpoint=checkpoint_path)
     medsam_model = medsam_model.to(device)
     medsam_model.eval()
@@ -136,7 +139,7 @@ def segment_image():
     rgba_image = (rgba_image * 255).astype(np.uint8)
 
     # Save the resized mask as a PNG image
-    temp_path = join('./static/results', "seg_" + image_id) + ".png"
+    temp_path = join(RESULT_FOLDER, "seg_" + image_id) + ".png"
     io.imsave(temp_path, rgba_image)
 
     # Read the saved file and encode it to base64
