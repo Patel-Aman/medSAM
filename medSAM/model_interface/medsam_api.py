@@ -77,11 +77,6 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-device = args.device
-medsam_model = sam_model_registry["vit_b"](checkpoint=args.checkpoint)
-medsam_model = medsam_model.to(device)
-medsam_model.eval()
-
 img_np = io.imread(args.data_path)
 if len(img_np.shape) == 2:
     img_3c = np.repeat(img_np[:, :, None], 3, axis=-1)
