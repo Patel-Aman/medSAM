@@ -48,6 +48,8 @@ cd backend
    ```bash
    pip install -e .
    ```
+4. **Download Model**
+   Download the [model checkpoint](https://drive.google.com/drive/folders/1ETWmi4AiniJeWOt6HAsYgTjYv_fkgzoN?usp=drive_link) and place it at  `work_dir/MedSAM/medsam_vit_b`
 
 4. **Start the backend server:**
    ```bash
@@ -57,7 +59,7 @@ cd backend
 ---
 
 ## Frontend Setup
-
+Create a new terminal window.  
 Navigate to the frontend directory:
 ```bash
 cd medSAM
@@ -77,9 +79,16 @@ cd frontend
 
 ---
 
+
+
 ## Application Usage
 - Use the provided endpoints to upload images and perform segmentation tasks via the frontend interface.
 - Ensure the backend server is running before starting the frontend.
+
+---
+
+## Demo
+![demo-gif](demo/demo.gif)
 
 ---
 
