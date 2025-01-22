@@ -2,6 +2,17 @@
 
 This application provides a backend and frontend for running the MedSAM machine learning model to perform segmentation tasks. Below are the steps to set up and run the application.
 
+## Prerequisites
+
+Before setting up the backend and frontend, ensure you have the following installed:
+
+1. **Anaconda**: If not installed, download and install Anaconda from [here](https://www.anaconda.com/products/individual).
+   
+2. **Node.js (v22)**: Install Node.js v22 from [here](https://nodejs.org/en/).
+
+3. **CUDA (optional)**: If you're planning to use a GPU, ensure that CUDA drivers are installed according to the instructions provided by NVIDIA. This is necessary for PyTorch GPU support.
+
+
 ## Clone the Repository
 ```bash
 git clone https://github.com/GochaLearningSpace/Aman_Gocha
