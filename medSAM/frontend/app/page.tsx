@@ -3,14 +3,16 @@ import { useState } from "react";
 import FileUploader from "./components/FileUploader";
 import ImageEditor from "./components/ImageEditor";
 import styles from "./styles/Home.module.css";
+import useBoundingBoxes from "./hooks/useBoundingBoxes";
 
 const Home = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [imagePath, setImagePath] = useState<string | null>(null);
-
+  const {clearBoundingBoxes} = useBoundingBoxes();
   const handleImageUpload = (uploadedSrc: string, uploadedPath: string) => {
     setImageSrc(uploadedSrc);
     setImagePath(uploadedPath);
+    clearBoundingBoxes();
   };
 
   return (
@@ -21,7 +23,7 @@ const Home = () => {
       </div>
       {imageSrc && imagePath && (
         <div className={styles.editorContainer}>
-          <ImageEditor imageSrc={imageSrc} imagePath={imagePath} />
+          <ImageEditor imageSrc={imageSrc} imagePath={imagePath}/>
         </div>
       )}
     </div>

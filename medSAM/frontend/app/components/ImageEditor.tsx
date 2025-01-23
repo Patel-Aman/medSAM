@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { sendBoundingBox } from "../services/UploadService";
 import useBoundingBoxes from "../hooks/useBoundingBoxes";
-import styles from '../styles/global.module.css'
+import styles from '../styles/global.module.css';
 
 
 interface ImageEditorProps {
@@ -9,14 +9,14 @@ interface ImageEditorProps {
   imagePath: string;
 }
 
-const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath }) => {
+const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [scale, setScale] = useState(1);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
   const { boundingBoxes, addBoundingBox, clearBoundingBoxes } = useBoundingBoxes();
-  const [maskImages, setMaskImages] = useState<string[]>([]); // Base64-encoded mask image
   const [loading, setLoading] = useState(false); // Loading state
+  const [maskImages, setMaskImages] = useState<string[]>([]);
 
   // Draw the image and boxes
   useEffect(() => {
@@ -69,7 +69,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath }) => {
         setLoading(true); // Start loading
         const maskImageBase64 = await sendBoundingBox(imagePath, formattedBoundingBox);
         console.log("mask completed");
-        setMaskImages((prevMaskImages) => [...prevMaskImages, maskImageBase64]);
+        setMaskImages(prevState => [...prevState, maskImageBase64]);
       } catch (error) {
         console.error("Failed to process bounding box:", error);
       } finally {
@@ -106,6 +106,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath }) => {
     addBoundingBox({ x: startPoint.x, y: startPoint.y, width, height });
     setIsDrawing(false);
     setStartPoint(null);
+
+    
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -163,6 +165,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath }) => {
     clearBoundingBoxes();
   };
 
+  const handleClearMask = () => {
+    setMaskImages([])
+  }
+
   return (
     <div style={{ position: "relative", textAlign: "center" }}>
       <div style={{ marginBottom: "10px" }}>
@@ -177,6 +183,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath }) => {
         </button>
         <button onClick={handleClear} className={styles.buttonStyle}>
           Clear Boxes
+        </button>
+        <button onClick={handleClearMask} className={styles.buttonStyle}>
+          Clear Mask
         </button>
 
       </div>
