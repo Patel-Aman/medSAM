@@ -49,7 +49,8 @@ cd backend
    pip install -e .
    ```
 4. **Download Model**
-   Download the [model checkpoint](https://drive.google.com/drive/folders/1ETWmi4AiniJeWOt6HAsYgTjYv_fkgzoN?usp=drive_link) and place it at  `work_dir/MedSAM/medsam_vit_b`
+   Download the [medSAM checkpoint](https://drive.google.com/drive/folders/1ETWmi4AiniJeWOt6HAsYgTjYv_fkgzoN?usp=drive_link) and place it at `work_dir/MedSAM/medsam_vit_b.pth`
+   Download the [SAM checkpoint](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth) and place it at `work_dir/MedSAM/sam_vit_b_01ec64.pth`
 
 4. **Start the backend server:**
    ```bash
