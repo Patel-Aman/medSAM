@@ -7,9 +7,10 @@ import styles from '../styles/global.module.css';
 interface ImageEditorProps {
   imageSrc: string;
   imagePath: string;
+  model: string;
 }
 
-const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath}) => {
+const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath, model}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [scale, setScale] = useState(1);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -67,7 +68,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath}) => {
         const formattedBoundingBox = `${Math.round(lastBox.x)},${Math.round(lastBox.y)},${Math.round((lastBox.x + lastBox.width))},${Math.round((lastBox.y + lastBox.height))}`;
         console.log(formattedBoundingBox);
         setLoading(true); // Start loading
-        const maskImageBase64 = await sendBoundingBox(imagePath, formattedBoundingBox);
+        const maskImageBase64 = await sendBoundingBox(imagePath, formattedBoundingBox, model);
         console.log("mask completed");
         setMaskImages(prevState => [...prevState, maskImageBase64]);
       } catch (error) {
@@ -78,7 +79,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath}) => {
     };
 
     handleSubmitBoundingBoxes();
-  }, [boundingBoxes, imagePath])
+  }, [boundingBoxes, imagePath, model])
 
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -106,8 +107,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, imagePath}) => {
     addBoundingBox({ x: startPoint.x, y: startPoint.y, width, height });
     setIsDrawing(false);
     setStartPoint(null);
-
-    
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
