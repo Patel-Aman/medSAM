@@ -14,9 +14,6 @@ join = os.path.join
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
-medsam_chk = "./work_dir/MedSAM/medsam_vit_b.pth"
-sam_chk = "./work_dir/SAM/sam_vit_b_01ec64.pth"
-
 UPLOAD_FOLDER = 'static/uploads'
 RESULT_FOLDER = 'static/results'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -43,8 +40,8 @@ def upload_image():
     image_file.save(file_path)
     return jsonify({"path": image_id}), 200
 
-@app.route('/new-box/<model>', methods=['POST'])
-def segment_image(model):
+@app.route('/new-box', methods=['POST'])
+def segment_image():
     # parse the request
     data = request.json
     if 'filePath' not in data or 'boundingBox' not in data:
@@ -67,16 +64,9 @@ def segment_image(model):
     img_np = io.imread(file_path)
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
-    if (model == 'SAM'):
-        checkpoint_path = sam_chk
-    else:
-        checkpoint_path = medsam_chk
-
-    print('------------------------------------')
-    print(checkpoint_path)
-    print('------------------------------------')
-    
+    # Load the model once globally
     device = "cuda:0"
+    checkpoint_path = "./work_dir/SAM2/sam2.1_hiera_base_plus.pt"
     medsam_model = sam_model_registry["vit_b"](checkpoint=checkpoint_path)
     medsam_model = medsam_model.to(device)
     medsam_model.eval()
