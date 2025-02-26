@@ -15,13 +15,8 @@ Before setting up the backend and frontend, ensure you have the following instal
 
 ## Clone the Repository
 ```bash
-git clone https://github.com/GochaLearningSpace/Aman_Gocha
-cd Aman_Gocha
-```
-
-## Switch to the `medsam` Branch
-```bash
-git checkout medsam
+git clone https://github.com/Patel-Aman/medSAM
+cd medSAM
 ```
 
 ---
